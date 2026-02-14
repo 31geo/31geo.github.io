@@ -28,7 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -50,18 +52,15 @@ import com.tantalean.vjccontroller.component.OscPadButton
 import com.tantalean.vjccontroller.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
-// AdMob / AndroidView imports
+// StartApp banner will be rendered via AndroidView (reflection)
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
 import android.util.Log
+import android.view.View
+import android.content.Context
 import androidx.compose.runtime.DisposableEffect
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.LoadAdError
 
 // ── Colores de los pads ──────────────────────────────────────────
 private val LayerBlue = Color(0xFF1565C0)
@@ -128,11 +127,31 @@ fun ControlScreen(
             // ═══════════════════════════════════════════════════
             // botones + / - arriba
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Button(onClick = { vm.addLayer() }, enabled = configState.isConnected, modifier = Modifier.height(40.dp)) {
+                val addInteraction = remember { MutableInteractionSource() }
+                val addPressed by addInteraction.collectIsPressedAsState()
+
+                Button(
+                    onClick = { vm.addLayer() },
+                    interactionSource = addInteraction,
+                    enabled = configState.isConnected,
+                    modifier = Modifier.height(40.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (addPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary)
+                ) {
                     Text(text = "+ Layer", fontSize = 14.sp)
                 }
+
                 Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { vm.removeLayer() }, enabled = configState.isConnected, modifier = Modifier.height(40.dp)) {
+
+                val removeInteraction = remember { MutableInteractionSource() }
+                val removePressed by removeInteraction.collectIsPressedAsState()
+
+                Button(
+                    onClick = { vm.removeLayer() },
+                    interactionSource = removeInteraction,
+                    enabled = configState.isConnected,
+                    modifier = Modifier.height(40.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (removePressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary)
+                ) {
                     Text(text = "- Layer", fontSize = 14.sp)
                 }
             }
@@ -300,63 +319,48 @@ private fun OscSliderRow(
 
 
 /**
- * Banner Ad composable (AdMob).
- * - usa ID de prueba automáticamente en builds DEBUG
- * - usa tamaño anclado adaptativo recomendado por AdMob
- * - registra cargas y errores en Logcat para depuración
+ * Banner composable usando Start.io (StartApp SDK).
+ * - dependemos del SDK `com.startapp:inapp-sdk`.
+ * - implementado vía reflexión para evitar hard-dep en el nombre exacto de la clase.
+ * - si no se encuentra la clase, se renderiza un view vacío para evitar crash.
  */
 @Composable
 fun BannerAd(adUnitId: String) {
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val adWidthDp = (configuration.screenWidthDp - 32).coerceAtLeast(320) // resta padding horizontal
-    val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidthDp)
+    // altura de banner fija (StartApp suele usar ~50dp)
+    val bannerHeight = 50.dp
 
-    // altura del ad en dp para el modifier
-    val adHeightDp = with(LocalDensity.current) { adSize.getHeightInPixels(context).toDp() }
+    AndroidView(factory = { ctx ->
+        // Intentar crear el Banner StartApp por reflexión (varias posibilidades de nombre)
+        val classNames = listOf(
+            "com.startapp.sdk.ads.banner.Banner",
+            "com.startapp.sdk.ads.banner.StartAppBanner",
+            "com.startapp.ads.banner.Banner",
+            "com.startapp.sdk.adsbase.banner.Banner"
+        )
 
-    // MobileAds se inicializa en Application.onCreate (VJControllerApp)
-
-    // detectar si la app está en modo debug en tiempo de ejecución (evita depender de BuildConfig)
-    val isDebug = (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-    val usedAdUnitId = if (isDebug) {
-        "ca-app-pub-3940256099942544/6300978111" // ADMOB_TEST_BANNER
-    } else {
-        adUnitId
-    }
-
-    val adRef = remember { mutableStateOf<AdView?>(null) }
-
-    AndroidView(
-        factory = { ctx ->
-            AdView(ctx).apply {
-                setAdSize(adSize)
-                this.adUnitId = usedAdUnitId
-
-                adListener = object : AdListener() {
-                    override fun onAdLoaded() {
-                        Log.d("BannerAd", "onAdLoaded — unit=$usedAdUnitId size=$adSize")
-                    }
-                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        Log.d("BannerAd", "onAdFailedToLoad: ${loadAdError.message} (code=${loadAdError.code})")
-                    }
+        var bannerView: View? = null
+        for (cn in classNames) {
+            try {
+                val clazz = Class.forName(cn)
+                val ctor = clazz.getConstructor(Context::class.java)
+                val instance = ctor.newInstance(ctx) as? View
+                if (instance != null) {
+                    bannerView = instance
+                    break
                 }
-
-                loadAd(AdRequest.Builder().build())
-                adRef.value = this
+            } catch (t: Throwable) {
+                // seguir intentando con otros nombres
             }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(adHeightDp)
-            .padding(top = 16.dp),
-        update = { /* no-op */ }
-    )
-
-    DisposableEffect(Unit) {
-        onDispose {
-            adRef.value?.destroy()
-            adRef.value = null
         }
-    }
+
+        // fallback: View vacío si no se encontró la clase StartAppBanner
+        bannerView ?: View(ctx)
+    }, modifier = Modifier
+        .fillMaxWidth()
+        .height(bannerHeight)
+        .padding(top = 16.dp))
+
+    // no hay cleanup específico (StartApp Banner es un View simple)
+    DisposableEffect(Unit) { onDispose { } }
 }

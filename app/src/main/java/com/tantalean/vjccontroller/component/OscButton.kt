@@ -31,6 +31,10 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// Helper: darken a Color by a factor (0..1) — used to show pressed state
+private fun Color.darken(factor: Float = 0.85f): Color =
+    Color(red * factor, green * factor, blue * factor, alpha)
+
 /**
  * Botón pad estilo controlador físico (ORCA PAD / Resolume).
  * Bordes redondeados, sombra, animación spring, vibración háptica.
@@ -87,7 +91,7 @@ fun OscPadButton(
                 )
             },
         shape = RoundedCornerShape(cornerRadius),
-        colors = CardDefaults.cardColors(containerColor = if (enabled) color else color.copy(alpha = 0.35f)),
+        colors = CardDefaults.cardColors(containerColor = if (enabled) (if (isPressed) color.darken(0.78f) else color) else color.copy(alpha = 0.35f)),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isPressed) 2.dp else elevation,
             pressedElevation = 2.dp

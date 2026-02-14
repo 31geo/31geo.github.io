@@ -15,10 +15,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VJControllerOSC">
-        <!-- AdMob App ID (reemplazado por el App ID que proporcionaste) -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5263375378931462~4699994302" />
         <meta-data
             android:name="com.startapp.sdk.APPLICATION_ID"
             android:value="201633923" />

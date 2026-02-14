@@ -44,6 +44,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.tantalean.vjccontroller.viewmodel.MainViewModel
 
 @Composable
@@ -189,17 +191,21 @@ fun ConfigScreen(
 
                     // ── Connect Button ──────────────────────
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val connectInteraction = remember { MutableInteractionSource() }
+                        val connectPressed by connectInteraction.collectIsPressedAsState()
+
                         Button(
                             onClick = {
                                 vm.saveConfig(ip, port)
                                 onNavigateToControl()
                             },
+                            interactionSource = connectInteraction,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
+                                containerColor = if (connectPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary
                             ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 6.dp,
@@ -223,14 +229,18 @@ fun ConfigScreen(
                             }
                         }
 
+                        val diagInteraction = remember { MutableInteractionSource() }
+                        val diagPressed by diagInteraction.collectIsPressedAsState()
+
                         Button(
                             onClick = { vm.sendDiagnostic() },
+                            interactionSource = diagInteraction,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary
+                                containerColor = if (diagPressed) MaterialTheme.colorScheme.secondary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.secondary
                             ),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 6.dp,
