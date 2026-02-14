@@ -189,13 +189,20 @@ fun ControlScreen(
             // ═══════════════════════════════════════════════════
             val clips = vm.getClipsForSelectedLayer()
 
-            for (row in 0..2) {
+            // Renderizar filas de 3 por número dinámico de clips (soporta 12)
+            val clipsPerRow = 3
+            val rows = (clips.size + clipsPerRow - 1) / clipsPerRow
+            for (row in 0 until rows) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    for (col in 0..2) {
-                        val index = row * 3 + col
+                    for (col in 0 until clipsPerRow) {
+                        val index = row * clipsPerRow + col
+                        if (index >= clips.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                            continue
+                        }
                         val cmd = clips[index]
                         val padColor = if ((row + col) % 2 == 0) ClipGreen else ClipGreenLight
 

@@ -3,9 +3,9 @@ package com.tantalean.vjccontroller.model
 
 object DefaultCommands {
 
-    /** Clips: genera 9 clips por layer */
+    /** Clips: genera 12 clips por layer (ahora 12 en total) */
     fun clipsForLayer(layer: Int): List<OscCommand> =
-        (1..9).map { clip ->
+        (1..12).map { clip ->
             OscCommand(
                 label = "CLIP $clip",
                 address = "/composition/layers/$layer/clips/$clip/connect",
