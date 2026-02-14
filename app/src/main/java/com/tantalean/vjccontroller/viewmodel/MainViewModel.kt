@@ -200,8 +200,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val layer = _controlState.value.selectedLayer
         val value = _controlState.value.opacity
         // Enviar a la dirección principal y a la alternativa 'mixer/opacity' por compatibilidad
-        sendOsc("/composition/layers/$layer/video/opacity", listOf(value))
-        sendOsc("/composition/layers/$layer/video/mixer/opacity", listOf(value))
+        // NO actualizar `lastMessage` para evitar mensajes spam al mover el slider
+        sendOsc("/composition/layers/$layer/video/opacity", listOf(value), showStatus = false)
+        sendOsc("/composition/layers/$layer/video/mixer/opacity", listOf(value), showStatus = false)
     }
 
     /** Trigger all clips of a layer when that Layer button is clicked */
@@ -234,17 +235,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun sendOsc(address: String, args: List<Any>) {
+    private fun sendOsc(address: String, args: List<Any>, showStatus: Boolean = true) {
         val ip = _configState.value.ip
         val portString = _configState.value.port
         val port = portString.toIntOrNull()
 
         if (ip.isBlank()) {
-            _controlState.update { it.copy(lastMessage = "✗ No IP configurada", error = "IP vacía") }
+            if (showStatus) _controlState.update { it.copy(lastMessage = "✗ No IP configurada", error = "IP vacía") }
             return
         }
         if (port == null) {
-            _controlState.update { it.copy(lastMessage = "✗ Puerto inválido", error = "Puerto: '$portString' no es un número") }
+            if (showStatus) _controlState.update { it.copy(lastMessage = "✗ Puerto inválido", error = "Puerto: '$portString' no es un número") }
             return
         }
 
@@ -254,15 +255,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     repo.connect(ip, port)
                 }
                 val result = repo.sendRaw(address, args)
-                _controlState.update {
-                    it.copy(
-                        lastMessage = if (result.isSuccess) "✓ $address"
-                        else "✗ Error",
-                        error = result.exceptionOrNull()?.message
-                    )
+                if (showStatus) {
+                    _controlState.update {
+                        it.copy(
+                            lastMessage = if (result.isSuccess) "✓ $address"
+                            else "✗ Error",
+                            error = result.exceptionOrNull()?.message
+                        )
+                    }
+                } else {
+                    // solo registrar error si falla
+                    if (!result.isSuccess) {
+                        _controlState.update { it.copy(error = result.exceptionOrNull()?.message) }
+                    }
                 }
             } catch (e: Exception) {
-                _controlState.update { it.copy(lastMessage = "✗ Exception", error = e.message) }
+                if (showStatus) _controlState.update { it.copy(lastMessage = "✗ Exception", error = e.message) }
+                else _controlState.update { it.copy(error = e.message) }
             }
         }
     }
