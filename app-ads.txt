@@ -1,0 +1,3 @@
+# app-ads.txt for VJControllerOSC
+# Publisher ID (AdMob)
+google.com, pub-5263375378931462, DIRECT, f08c47fec0942fa0
