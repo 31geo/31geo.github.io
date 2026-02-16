@@ -7,5 +7,5 @@
     <string name="ad_unit_config">ca-app-pub-5263375378931462/6579519359</string>
 
     <!-- URL pública que devuelve { latest_version, update_url } -->
-    <string name="version_json_url">https://tusitio.com/version.json</string>
+    <string name="version_json_url">https://31geo.github.io/version.json</string>
 </resources>
