@@ -57,6 +57,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import android.util.Log
 import android.view.View
 import android.content.Context
@@ -176,7 +179,8 @@ fun ControlScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        val labelText = if (layer >= 5) "L" else "LAYER $layer"
+                        // Mostrar números cuando el total de layers sea >= 5; si no, mostrar "LAYER X"
+                        val labelText = if (controlState.layerCount >= 5) layer.toString() else "LAYER $layer"
                         Text(text = labelText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
@@ -275,8 +279,8 @@ fun ControlScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── Banner Ad (FULL_BANNER 468x60) — App ID ya configurado en AndroidManifest
-            // LCID / Ad Unit (reemplazado por tu unidad que genera ingresos)
-            BannerAd(adUnitId = "ca-app-pub-5263375378931462/2908400482")
+            // LCID / Ad Unit (usar StartApp ID para el panel principal)
+            BannerAd(adUnitId = "201633923")
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -326,48 +330,55 @@ private fun OscSliderRow(
 
 
 /**
- * Banner composable usando Start.io (StartApp SDK).
- * - dependemos del SDK `com.startapp:inapp-sdk`.
- * - implementado vía reflexión para evitar hard-dep en el nombre exacto de la clase.
- * - si no se encuentra la clase, se renderiza un view vacío para evitar crash.
+ * Banner composable: soporta AdMob (si `adUnitId` es AdMob) y cae de vuelta a StartApp si no.
+ * - Si `adUnitId` empieza con `ca-app-pub-` renderiza un `AdView` (AdMob).
+ * - Si no, intenta crear el banner de StartApp por reflexión (comportamiento previo).
  */
 @Composable
 fun BannerAd(adUnitId: String) {
     val context = LocalContext.current
-    // altura de banner fija (StartApp suele usar ~50dp)
-    val bannerHeight = 50.dp
+    // altura de banner (aprox. StartApp ~50dp, AdMob FULL_BANNER es 60dp)
+    val bannerHeight = 60.dp
 
     AndroidView(factory = { ctx ->
-        // Intentar crear el Banner StartApp por reflexión (varias posibilidades de nombre)
-        val classNames = listOf(
-            "com.startapp.sdk.ads.banner.Banner",
-            "com.startapp.sdk.ads.banner.StartAppBanner",
-            "com.startapp.ads.banner.Banner",
-            "com.startapp.sdk.adsbase.banner.Banner"
-        )
-
-        var bannerView: View? = null
-        for (cn in classNames) {
-            try {
-                val clazz = Class.forName(cn)
-                val ctor = clazz.getConstructor(Context::class.java)
-                val instance = ctor.newInstance(ctx) as? View
-                if (instance != null) {
-                    bannerView = instance
-                    break
-                }
-            } catch (t: Throwable) {
-                // seguir intentando con otros nombres
+        // Si el adUnitId parece ser de AdMob, crear un AdView y cargar AdRequest
+        if (adUnitId.startsWith("ca-app-pub-")) {
+            AdView(ctx).apply {
+                setAdSize(AdSize.FULL_BANNER)
+                this.adUnitId = adUnitId
+                loadAd(AdRequest.Builder().build())
             }
-        }
+        } else {
+            // Intentar crear el Banner StartApp por reflexión (comportamientos previos)
+            val classNames = listOf(
+                "com.startapp.sdk.ads.banner.Banner",
+                "com.startapp.sdk.ads.banner.StartAppBanner",
+                "com.startapp.ads.banner.Banner",
+                "com.startapp.sdk.adsbase.banner.Banner"
+            )
 
-        // fallback: View vacío si no se encontró la clase StartAppBanner
-        bannerView ?: View(ctx)
+            var bannerView: View? = null
+            for (cn in classNames) {
+                try {
+                    val clazz = Class.forName(cn)
+                    val ctor = clazz.getConstructor(Context::class.java)
+                    val instance = ctor.newInstance(ctx) as? View
+                    if (instance != null) {
+                        bannerView = instance
+                        break
+                    }
+                } catch (t: Throwable) {
+                    // seguir intentando con otros nombres
+                }
+            }
+
+            // fallback: View vacío si no se encontró la clase StartAppBanner
+            bannerView ?: View(ctx)
+        }
     }, modifier = Modifier
         .fillMaxWidth()
         .height(bannerHeight)
         .padding(top = 16.dp))
 
-    // no hay cleanup específico (StartApp Banner es un View simple)
     DisposableEffect(Unit) { onDispose { } }
 }
