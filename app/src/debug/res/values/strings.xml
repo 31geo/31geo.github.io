@@ -1,4 +1,6 @@
 <resources>
     <!-- Debug override: usar AdMob test Ad Unit para asegurar que el banner carga en debug -->
     <string name="ad_unit_config">ca-app-pub-3940256099942544/6300978111</string>
+    <!-- También forzar control panel a usar AdMob test en debug para pruebas -->
+    <string name="ad_unit_control">ca-app-pub-3940256099942544/6300978111</string>
 </resources>
