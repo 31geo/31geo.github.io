@@ -1,6 +1,4 @@
 <resources>
-    <!-- Debug override: temporal para probar banner en panel de configuración -->
-    <!-- Nota: la ID proporcionada parece ser un App ID (contiene '~'). Si quieres el Ad Unit de prueba,
-         usa ca-app-pub-3940256099942544/6300978111. -->
-    <string name="ad_unit_config">ca-app-pub-5263375378931462~4448180038</string>
+    <!-- Debug override: usar AdMob test Ad Unit para asegurar que el banner carga en debug -->
+    <string name="ad_unit_config">ca-app-pub-3940256099942544/6300978111</string>
 </resources>
