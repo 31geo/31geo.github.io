@@ -13,8 +13,8 @@ android {
         applicationId = "com.tantalean.vjccontroller"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -60,4 +60,5 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation("com.startapp:inapp-sdk:5.+")
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 }

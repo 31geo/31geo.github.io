@@ -155,21 +155,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Envío de dirección explícito para asignaciones (long-press)
      * Cuando se trata de clips, enviamos la dirección a todas las capas (1..3)
      * para que Resolume pueda detectar y asignar correctamente el atajo.
+     *
+     * Nota: no mostrar mensajes de "Asignación enviada" para direcciones de
+     * parámetros (p.ej. `/video/opacity`) para evitar spam en la UI.
      */
     fun sendCommandForAssignment(command: OscCommand) {
         val ip = _configState.value.ip
         val port = _configState.value.port.toIntOrNull() ?: return
 
-        _controlState.update { it.copy(lastMessage = "Asignando: ${command.address}") }
+        // Mostrar estado sólo para asignaciones de CLIP; para parámetros (opacity, etc.)
+        // evitamos actualizar `lastMessage` cuando el envío fue exitoso.
+        val clipRegex = "/composition/layers/(\\d+)/clips/(\\d+)(/.*)?".toRegex()
+        val isClipAddress = clipRegex.matches(command.address)
+        if (isClipAddress) {
+            _controlState.update { it.copy(lastMessage = "Asignando: ${command.address}") }
+        }
 
         viewModelScope.launch {
             try {
                 if (!repo.isConnected) repo.connect(ip, port)
 
-                // Detectar si el address pertenece a un clip de un layer
-                val regex = "/composition/layers/(\\d+)/clips/(\\d+)(/.*)?".toRegex()
-                if (regex.matches(command.address)) {
-                    // Siempre enviar la dirección reemplazada hacia la capa actualmente seleccionada.
+                if (isClipAddress) {
+                    // Envío especial para clips: reemplazar layer por el seleccionado y mostrar resultado
                     val selectedLayer = _controlState.value.selectedLayer
                     val replaced = command.address.replace("/composition/layers/\\d+/".toRegex(), "/composition/layers/$selectedLayer/")
                     val r = repo.sendRaw(replaced, command.args)
@@ -177,14 +184,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     return@launch
                 }
 
-                // Otros tipos de direcciones: enviar normal
+                // Otros tipos de direcciones (p.ej. parámetros como opacity): enviar pero
+                // no actualizar `lastMessage` en caso de éxito para no mostrar el texto
+                // "Asignación enviada" al usuario. Registrar error si falla.
                 val result = repo.sendRaw(command.address, command.args)
-                _controlState.update {
-                    it.copy(lastMessage = if (result.isSuccess) "Asignación enviada: ${command.address}" else "Error asignación: ${result.exceptionOrNull()?.message}")
+                if (!result.isSuccess) {
+                    _controlState.update { it.copy(lastMessage = "Error asignación: ${result.exceptionOrNull()?.message}") }
                 }
 
             } catch (e: Exception) {
-                _controlState.update { it.copy(lastMessage = "Exception asignación: ${e.message}") }
+                // Solo mostrar excepción si está relacionada con una asignación de clip
+                if (isClipAddress) _controlState.update { it.copy(lastMessage = "Exception asignación: ${e.message}") }
             }
         }
     }
