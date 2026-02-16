@@ -61,4 +61,6 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("com.startapp:inapp-sdk:5.+")
     implementation("com.google.android.gms:play-services-ads:23.0.0")
+    // HTTP client para verificar versión remota
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
