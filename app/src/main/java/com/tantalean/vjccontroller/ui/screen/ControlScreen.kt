@@ -30,6 +30,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -280,7 +281,8 @@ fun ControlScreen(
 
             // ── Banner Ad (FULL_BANNER 468x60) — App ID ya configurado en AndroidManifest
             // LCID / Ad Unit (usar StartApp ID para el panel principal)
-            BannerAd(adUnitId = "201633923")
+            val controlAdUnit = stringResource(id = com.tantalean.vjccontroller.R.string.ad_unit_control)
+            BannerAd(adUnitId = controlAdUnit)
 
             Spacer(modifier = Modifier.height(8.dp))
 

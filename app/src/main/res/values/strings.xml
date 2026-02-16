@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">VJ Controller OSC</string>
+    <!-- Ad IDs -->
+    <string name="startapp_app_id">201633923</string>
+    <string name="admob_app_id">ca-app-pub-5263375378931462~4699994302</string>
+    <string name="ad_unit_control">201633923</string>
+    <string name="ad_unit_config">ca-app-pub-5263375378931462/6579519359</string>
 </resources>

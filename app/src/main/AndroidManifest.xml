@@ -17,7 +17,10 @@
         android:theme="@style/Theme.VJControllerOSC">
         <meta-data
             android:name="com.startapp.sdk.APPLICATION_ID"
-            android:value="201633923" />
+            android:value="@string/startapp_app_id" />
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

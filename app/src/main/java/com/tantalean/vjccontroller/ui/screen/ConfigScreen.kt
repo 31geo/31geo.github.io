@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -102,7 +103,7 @@ fun ConfigScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Ingresa la IP de la laptop donde\nestá corriendo Resolume Arena",
+                        text = "Ingresa la IP Address de resolume Arena",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
@@ -115,7 +116,7 @@ fun ConfigScreen(
                     OutlinedTextField(
                         value = ip,
                         onValueChange = { ip = it },
-                        label = { Text("IP de la laptop") },
+                        label = { Text("IP de resolume Arena") },
                         placeholder = { Text("192.168.1.100") },
                         leadingIcon = {
                             Icon(
@@ -252,7 +253,8 @@ fun ConfigScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    BannerAd(adUnitId = "ca-app-pub-5263375378931462/2908400482")
+                    val configAdUnit = stringResource(id = com.tantalean.vjccontroller.R.string.ad_unit_config)
+                    BannerAd(adUnitId = configAdUnit)
                     Spacer(modifier = Modifier.height(12.dp))
 
                 }
